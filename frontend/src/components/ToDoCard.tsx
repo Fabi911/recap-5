@@ -1,33 +1,39 @@
 import styled from "styled-components";
-import axios from "axios";
-import { useState, useEffect } from "react";
 import { ToDo } from "../types/toDo.ts";
+import axios from "axios";
 
-export default function ToDoCard() {
-  const [todos, setTodos] = useState<ToDo[]>([]);
-
-  useEffect(() => {
-    fetchTodos();
-  }, []);
-
-  function fetchTodos() {
+export default function ToDoCard({
+  todo,
+  fetchTodos,
+}: {
+  todo: ToDo;
+  fetchTodos: () => void;
+}) {
+  function updateStatus(status: string) {
     axios
-      .get("/api/todo")
-      .then((response) => {
-        setTodos(response.data);
+      .put(`/api/todo/${todo.id}`, {
+        ...todo,
+        status: status,
       })
-      .catch((error) => {
-        console.error("Error fetching todos: ", error.message);
-      });
+      .then(() => fetchTodos());
   }
+
+  const handleButtonClick = async () => {
+    if (todo.status === "OPEN") {
+      updateStatus("IN_PROGRESS");
+    } else if (todo.status === "IN_PROGRESS") {
+      updateStatus("DONE");
+    } else if (todo.status === "DONE") {
+      axios.delete(`/api/todo/${todo.id}`).then(() => fetchTodos());
+    }
+  };
+
   return (
-    <>
-      {todos.map((todo) => (
-        <CardBox key={todo.id}>
-          <p>{todo.description}</p>
-        </CardBox>
-      ))}
-    </>
+    <button onClick={handleButtonClick}>
+      <CardBox key={todo.id}>
+        <p>{todo.description}</p>
+      </CardBox>
+    </button>
   );
 }
 
